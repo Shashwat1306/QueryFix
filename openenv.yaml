@@ -1,0 +1,47 @@
+name: sql-query-debugger
+version: 1.0.0
+description: >
+  An OpenEnv environment where AI agents debug broken SQL queries.
+  The agent receives a broken SQL query with schema context and error information,
+  submits a fixed version, and is scored by executing the query against SQLite
+  and comparing results to ground truth.
+author: your-hf-username
+tags:
+  - openenv
+  - sql
+  - debugging
+  - developer-tools
+  - real-world
+tasks:
+  - id: easy
+    description: Fix syntax errors and simple clause mistakes in basic SELECT queries
+    difficulty: easy
+    max_steps: 15
+  - id: medium
+    description: Fix JOIN errors, HAVING vs WHERE confusion, and subquery bugs
+    difficulty: medium
+    max_steps: 21
+  - id: hard
+    description: Fix complex multi-layer bugs in CTEs, self-joins, and nested subqueries
+    difficulty: hard
+    max_steps: 16
+action_space:
+  type: object
+  properties:
+    query_id:
+      type: integer
+      description: ID of the query being fixed
+    fixed_query:
+      type: string
+      description: The corrected SQL query string
+observation_space:
+  type: object
+  description: Current query info, episode progress, and scoring state
+reward_range: [-1.0, 1.0]
+endpoints:
+  reset: POST /reset
+  step: POST /step
+  state: GET /state
+  tasks: GET /tasks
+  grader: POST /grader
+  baseline: POST /baseline
