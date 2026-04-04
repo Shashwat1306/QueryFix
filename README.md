@@ -15,7 +15,7 @@ tags:
 
 An OpenEnv-compliant environment where AI agents learn to debug broken SQL queries. The agent receives broken SQL queries with contextual information (schema, error messages, expected output hints) and must submit corrected versions. Each query is executed against an in-memory SQLite database, and results are compared to ground truth to score the agent's performance.
 
-**Live Demo:** [https://huggingface.co/spaces/Shashwat1306/queryfix-env]
+**Live Demo:** [QueryFix on Hugging Face](https://huggingface.co/spaces/Shashwat1306/queryfix-env)
 
 ---
 
@@ -27,7 +27,7 @@ SQL Query Debugger simulates a real-world scenario where developers and data ana
 
 - **Easy:** Syntax errors, typos, missing clauses
 - **Medium:** JOIN issues, HAVING vs WHERE confusion, subquery problems
-- **Hard:** Complex logic errors in CTEs, self-joins, nested subqueries, and subtle percentage calculations
+- **Hard:** NULL aggregation in LEFT JOINs, silent INNER JOIN exclusions, self-join inversions, subquery scope errors, and percentage calculation bugs
 
 **Why is this useful?**
 
@@ -165,12 +165,12 @@ HAVING AVG(salary) > 70000
 - **Queries:** 8
 - **Max attempts per query:** 2
 - **Bug types:**
-  - NULL aggregation in LEFT JOINs
+  - NULL aggregation errors in LEFT JOINs
   - Nested subquery filtering wrong dataset
   - Self-join condition inverted
   - Percentage calculation using wrong denominator
   - SELECT alias used in WHERE clause
-  - INNER JOIN silently excluding NULL values
+  - INNER JOIN silently excluding NULL rows
 
 **Example:**
 ```sql
@@ -199,6 +199,8 @@ GROUP BY d.name
 ### Prerequisites
 - Python 3.11+
 - Docker (optional, for containerized deployment)
+
+**Note on Ports:** Local setup uses port 8000, Docker uses port 7860 (required by HF Spaces)
 
 ### Local Setup (without Docker)
 
@@ -240,19 +242,6 @@ docker run -p 7860:7860 sql-query-debugger
 curl http://localhost:7860/health
 ```
 
-### Running the Baseline Agent
-
-```bash
-export OPENAI_API_KEY=your-aipipe-token-or-openai-key
-# Works with both standard OpenAI keys (sk-...) and AIPipe tokens
-# See "API Keys & Authentication" section above for details
-python baseline.py
-```
-
-Optional environment variables:
-- `OPENAI_MODEL` (default: gpt-4o-mini)
-- `BASE_URL` (default: http://localhost:8000)
-
 ---
 
 ## API Keys & Authentication
@@ -278,6 +267,19 @@ python baseline.py
 The client automatically falls back to standard OpenAI 
 (https://api.openai.com/v1) if OPENAI_BASE_URL is not set.
 Both setups work identically.
+
+### Running the Baseline Agent
+
+```bash
+export OPENAI_API_KEY=your-aipipe-token-or-openai-key
+# Works with both standard OpenAI keys (sk-...) and AIPipe tokens
+# See "API Keys & Authentication" section above for details
+python baseline.py
+```
+
+Optional environment variables:
+- `OPENAI_MODEL` (default: gpt-4o-mini)
+- `BASE_URL` (default: http://localhost:8000)
 
 ---
 
@@ -459,25 +461,25 @@ Health check.
 ### Project Structure
 
 ```
-sql-query-debugger/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI routes
-│   ├── environment.py       # Core environment logic
-│   ├── models.py            # Pydantic models
-│   ├── database.py          # SQLite setup and execution
-│   ├── rewards.py           # Reward calculation
-│   ├── graders.py           # Episode grading
-│   └── tasks/
-│       ├── __init__.py
-│       ├── task_easy.py     # Easy task queries
-│       ├── task_medium.py   # Medium task queries
-│       └── task_hard.py     # Hard task queries
-├── baseline.py              # Baseline agent script
-├── requirements.txt
-├── Dockerfile
-├── openenv.yaml
-└── README.md
+app/
+├── __init__.py
+├── main.py              # FastAPI routes
+├── environment.py       # Core environment logic
+├── models.py            # Pydantic models
+├── database.py          # SQLite setup and execution
+├── rewards.py           # Reward calculation
+├── graders.py           # Episode grading
+└── tasks/
+    ├── __init__.py
+    ├── task_easy.py     # Easy task queries
+    ├── task_medium.py   # Medium task queries
+    └── task_hard.py     # Hard task queries
+baseline.py              # Baseline agent script
+requirements.txt
+Dockerfile
+openenv.yaml
+README.md
+.env.example
 ```
 
 ### Adding New Tasks
