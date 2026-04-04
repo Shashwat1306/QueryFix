@@ -1,0 +1,24 @@
+[project]
+name = "queryfix-env"
+version = "1.0.0"
+description = "An OpenEnv environment where AI agents debug broken SQL queries"
+authors = [
+    {name = "Shashwat", email = "24f2005879@ds.study.iitm.ac.in"}
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.30.6",
+    "pydantic==2.8.2",
+    "openai>=1.51.0",
+    "requests==2.32.3",
+    "httpx>=0.28.1",
+    "python-dotenv==1.0.1",
+]
+
+[project.urls]
+Homepage = "https://huggingface.co/spaces/Shashwat1306/queryfix-env"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
