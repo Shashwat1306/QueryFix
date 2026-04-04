@@ -1,3 +1,16 @@
+---
+title: QueryFix
+emoji: 🔍
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+tags:
+  - openenv
+---
+
+
+
 # SQL Query Debugger — OpenEnv Environment
 
 An OpenEnv-compliant environment where AI agents learn to debug broken SQL queries. The agent receives broken SQL queries with contextual information (schema, error messages, expected output hints) and must submit corrected versions. Each query is executed against an in-memory SQLite database, and results are compared to ground truth to score the agent's performance.
