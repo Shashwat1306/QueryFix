@@ -283,6 +283,43 @@ Optional environment variables:
 
 ---
 
+## Inference Script
+
+The `inference.py` script runs the LLM agent against all 3 tasks and emits structured logs.
+
+### Required Environment Variables
+| Variable | Description |
+|---|---|
+| `HF_TOKEN` | Your API key (AIPipe token or OpenAI key) |
+| `API_BASE_URL` | LLM endpoint (default: https://aipipe.org/openai/v1) |
+| `MODEL_NAME` | Model identifier (default: gpt-4o-mini) |
+| `BASE_URL` | Environment server URL (default: http://localhost:7860) |
+
+### Run Locally
+```bash
+export HF_TOKEN=your-api-key
+export API_BASE_URL=https://aipipe.org/openai/v1
+export MODEL_NAME=gpt-4o-mini
+export BASE_URL=http://localhost:7860
+python inference.py
+```
+
+### Output Format
+```
+[START] task=easy env=queryfix-sql-debugger model=gpt-4o-mini
+[STEP] step=1 action=SELECT name, salary FROM employees reward=1.00 done=false error=null
+[END] success=true steps=7 score=0.800 rewards=1.00,1.00,0.10,0.05,0.00,1.00,1.00
+```
+
+### Inference Results
+| Task | Score | Steps |
+|---|---|---|
+| Easy | 0.800 | 7 |
+| Medium | 0.868 | 11 |
+| Hard | 0.650 | 12 |
+
+---
+
 ## 7. Baseline Scores
 
 Baseline agent using **gpt-4o-mini** via AIPipe (temperature=0.0):
@@ -449,7 +486,7 @@ Health check.
 **Response:**
 ```json
 {
-  "status": "ok",
+  "status": "healthy",
   "version": "1.0.0"
 }
 ```
@@ -474,12 +511,18 @@ app/
     ├── task_easy.py     # Easy task queries
     ├── task_medium.py   # Medium task queries
     └── task_hard.py     # Hard task queries
+server/
+└── app.py               # Server entry point
 baseline.py              # Baseline agent script
-requirements.txt
-Dockerfile
-openenv.yaml
-README.md
-.env.example
+inference.py             # Inference script for evaluation
+requirements.txt         # Python dependencies
+pyproject.toml           # Project metadata and dependencies
+uv.lock                  # Lockfile for reproducible builds
+Dockerfile               # Docker configuration
+openenv.yaml             # OpenEnv metadata
+README.md                # Documentation
+.env.example             # Environment variables template
+.gitignore               # Git ignore rules
 ```
 
 ### Adding New Tasks
