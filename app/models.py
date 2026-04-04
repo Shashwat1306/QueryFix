@@ -58,7 +58,7 @@ class TaskInfo(BaseModel):
 
 # --- Reset Request ---
 class ResetRequest(BaseModel):
-    task_id: str = Field(..., description="One of: 'easy', 'medium', 'hard'")
+    task_id: str = Field("easy", description="One of: 'easy', 'medium', 'hard'")
 
 # --- Baseline Response ---
 class BaselineResponse(BaseModel):
