@@ -15,7 +15,7 @@ tags:
 
 An OpenEnv-compliant environment where AI agents learn to debug broken SQL queries. The agent receives broken SQL queries with contextual information (schema, error messages, expected output hints) and must submit corrected versions. Each query is executed against an in-memory SQLite database, and results are compared to ground truth to score the agent's performance.
 
-**Live Demo:** [Hugging Face Space](https://huggingface.co/spaces/your-username/sql-query-debugger) *(Update after deployment)*
+**Live Demo:** [https://huggingface.co/spaces/Shashwat1306/queryfix-env]
 
 ---
 
@@ -165,28 +165,31 @@ HAVING AVG(salary) > 70000
 - **Queries:** 8
 - **Max attempts per query:** 2
 - **Bug types:**
-  - CTE with inverted logic (< instead of >)
+  - NULL aggregation in LEFT JOINs
   - Nested subquery filtering wrong dataset
   - Self-join condition inverted
   - Percentage calculation using wrong denominator
   - SELECT alias used in WHERE clause
-  - Ranking logic with inverted sort order
+  - INNER JOIN silently excluding NULL values
 
 **Example:**
 ```sql
 -- Broken:
-WITH dept_avg AS (
-    SELECT department, AVG(salary) as avg_sal
-    FROM employees
-    GROUP BY department
-)
-SELECT e.name, e.salary
-FROM employees e
-JOIN dept_avg d ON e.department = d.department
-WHERE e.salary < d.avg_sal  -- Wrong: should be >
+SELECT d.name as department, COUNT(e.id) as headcount,
+       SUM(e.salary) as total_salary
+FROM departments d
+LEFT JOIN employees e ON e.department = d.name
+GROUP BY d.name
+
+-- Bug: SUM(e.salary) returns NULL for Finance (no employees)
+-- instead of 0. Must use COALESCE.
 
 -- Fixed:
-WHERE e.salary > d.avg_sal  -- Get employees ABOVE average
+SELECT d.name as department, COUNT(e.id) as headcount,
+       COALESCE(SUM(e.salary), 0) as total_salary
+FROM departments d
+LEFT JOIN employees e ON e.department = d.name
+GROUP BY d.name
 ```
 
 ---
@@ -201,8 +204,8 @@ WHERE e.salary > d.avg_sal  -- Get employees ABOVE average
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/your-username/sql-query-debugger.git
-cd sql-query-debugger
+git clone https://huggingface.co/spaces/Shashwat1306/queryfix-env
+cd queryfix-env
 ```
 
 2. **Install dependencies:**
@@ -240,7 +243,9 @@ curl http://localhost:7860/health
 ### Running the Baseline Agent
 
 ```bash
-export OPENAI_API_KEY=sk-...
+export OPENAI_API_KEY=your-aipipe-token-or-openai-key
+# Works with both standard OpenAI keys (sk-...) and AIPipe tokens
+# See "API Keys & Authentication" section above for details
 python baseline.py
 ```
 
@@ -250,36 +255,59 @@ Optional environment variables:
 
 ---
 
+## API Keys & Authentication
+
+This environment uses the OpenAI API for the `/baseline` endpoint only.
+
+### Standard OpenAI (for judges / evaluators)
+Set your API key as an environment variable:
+```bash
+export OPENAI_API_KEY=sk-...
+python baseline.py
+```
+
+### AIPipe (alternative, used in this deployment)
+This Space uses AIPipe as an OpenAI-compatible proxy.
+If you have an AIPipe token, also set:
+```bash
+export OPENAI_API_KEY=your-aipipe-token
+export OPENAI_BASE_URL=https://aipipe.org/openai/v1
+python baseline.py
+```
+
+The client automatically falls back to standard OpenAI 
+(https://api.openai.com/v1) if OPENAI_BASE_URL is not set.
+Both setups work identically.
+
+---
+
 ## 7. Baseline Scores
 
 Baseline agent using **gpt-4o-mini** via AIPipe (temperature=0.0):
 
-| Task | Score | Queries Solved | Accuracy |
-|------|-------|----------------|----------|
-| Easy | 0.800 | 4/5 | 80% |
-| Medium | 0.868 | 5/7 | 86.8% |
-| Hard | 0.756 | 6/8 | 75.6% |
-| **Average** | **0.808** | **15/20** | **80.8%** |
+| Task | Score | Queries Solved |
+|------|-------|----------------|
+| Easy | 0.800 | 4/5 queries solved |
+| Medium | 0.868 | 5/7 queries solved |
+| Hard | 0.649 | 5/8 queries solved |
+| **Average** | **0.772** | **14/20 total** |
 
 **Performance breakdown:**
 
 **Easy Task (0.800):**
-- ✅ Solved: Queries 1, 2, 4, 5 (syntax errors, typos, missing DESC)
-- ❌ Failed: Query 3 (GROUP BY - model repeated same incorrect answer)
+- ✅ Solved: Queries 1, 2, 4, 5
+- ❌ Failed: Query 3 (GROUP BY with COUNT — model repeated same incorrect answer)
 
 **Medium Task (0.868):**
-- ✅ Perfect: Queries 101, 103, 105, 106, 107 (JOINs, aggregates, syntax)
-- ⚠️ Partial: Queries 102, 104 (HAVING threshold, subquery logic - close but not exact)
+- ✅ Perfect: Queries 101, 103, 105, 106, 107
+- ⚠️ Partial: Queries 102, 104 (HAVING threshold, subquery logic)
 
-**Hard Task (0.756):**
-- ✅ Perfect: Queries 202, 203, 205, 206, 207 (nested subqueries, self-joins, aliases)
-- ⚠️ Partial: Queries 201, 204, 208 (CTE logic inversion, percentage calculation, ranking order)
-
-**Key Insights:**
-- Syntax errors (typos, missing quotes) → **100% success rate**
-- JOIN type errors (INNER vs LEFT) → **100% success rate**
-- Logic inversions (< vs >, ASC vs DESC) → **~60% partial success** (challenging for LLMs)
-- Complex percentage calculations → **Requires multiple attempts**
+**Hard Task (0.649):**
+- ✅ Perfect: Queries 202, 203, 206, 207, 208
+- ⚠️ Partial/Failed: Queries 201, 204, 205
+  - Query 201: NULL aggregation in LEFT JOIN (COALESCE pattern)
+  - Query 204: Percentage calculation with wrong denominator scope
+  - Query 205: INNER JOIN silently excluding NULL manager_id rows
 
 ---
 
@@ -404,13 +432,12 @@ Run baseline agent on all tasks (requires `OPENAI_API_KEY`).
 **Response:**
 ```json
 {
-  "easy": 0.95,
-  "medium": 0.82,
-  "hard": 0.65,
+  "easy": 0.800,
+  "medium": 0.868,
+  "hard": 0.649,
   "model_used": "gpt-4o-mini"
 }
 ```
-
 ---
 
 ### GET /health
@@ -478,10 +505,10 @@ If you use this environment in your research, please cite:
 
 ```bibtex
 @software{sql_query_debugger,
-  title = {SQL Query Debugger: An OpenEnv Environment for AI Agents},
-  author = {Your Name},
-  year = {2024},
-  url = {https://github.com/your-username/sql-query-debugger}
+  title = {QueryFix: SQL Query Debugger OpenEnv Environment},
+  author = {Shashwat},
+  year = {2026},
+  url = {https://huggingface.co/spaces/Shashwat1306/queryfix-env}
 }
 ```
 
@@ -490,23 +517,6 @@ If you use this environment in your research, please cite:
 ## License
 
 MIT License - See LICENSE file for details
-
----
-
-## Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
-
----
-
-## Contact
-
-- **Issues:** [GitHub Issues](https://github.com/your-username/sql-query-debugger/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/your-username/sql-query-debugger/discussions)
 
 ---
 
