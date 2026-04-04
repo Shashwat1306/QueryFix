@@ -33,7 +33,71 @@ async def startup_event():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "healthy", "version": "1.0.0"}
+
+
+@app.get("/metadata")
+async def metadata():
+    """Environment metadata endpoint."""
+    return {
+        "name": "QueryFix SQL Query Debugger",
+        "description": "An OpenEnv environment where AI agents debug broken SQL queries across three difficulty levels. Queries are executed against SQLite and scored by comparing results to ground truth.",
+        "version": "1.0.0",
+        "author": "Shashwat1306"
+    }
+
+
+@app.get("/schema")
+async def schema():
+    """Schema endpoint describing action, observation, and state structures."""
+    return {
+        "action": {
+            "type": "object",
+            "properties": {
+                "query_id": {"type": "integer", "description": "ID of the query being fixed"},
+                "fixed_query": {"type": "string", "description": "The corrected SQL query string"}
+            },
+            "required": ["query_id", "fixed_query"]
+        },
+        "observation": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "current_query": {"type": "object"},
+                "queries_remaining": {"type": "integer"},
+                "queries_total": {"type": "integer"},
+                "queries_solved": {"type": "integer"},
+                "episode_score_so_far": {"type": "number"},
+                "done": {"type": "boolean"}
+            }
+        },
+        "state": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "current_query_index": {"type": "integer"},
+                "queries_total": {"type": "integer"},
+                "queries_solved": {"type": "integer"},
+                "episode_score_so_far": {"type": "number"},
+                "done": {"type": "boolean"},
+                "step_count": {"type": "integer"}
+            }
+        }
+    }
+
+
+@app.post("/mcp")
+async def mcp():
+    """MCP endpoint for model context protocol."""
+    return {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+            "name": "QueryFix SQL Query Debugger",
+            "version": "1.0.0",
+            "description": "OpenEnv environment for SQL query debugging"
+        }
+    }
 
 
 @app.post("/reset", response_model=Observation)
@@ -267,10 +331,10 @@ Return only the fixed SQL query:
                 # Get grader score
                 if done:
                     grader_response = await http_client.post(f"{BASE_URL}/grader")
-                if grader_response.status_code == 200:
-                    scores[task_id] = grader_response.json()["score"]
-                else:
-                    scores[task_id] = 0.0
+                    if grader_response.status_code == 200:
+                        scores[task_id] = grader_response.json()["score"]
+                    else:
+                        scores[task_id] = 0.0
         
         return BaselineResponse(
             easy=scores.get("easy", 0.0),
