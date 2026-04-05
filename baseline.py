@@ -23,8 +23,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)  # For AIPipe or custom endpoints
+MODEL = os.getenv("OPENAI_MODEL") or "Qwen/Qwen2.5-72B-Instruct"
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or "https://router.huggingface.co/v1" # For AIPipe or custom endpoints
 
 SYSTEM_PROMPT = """You are a SQL debugging expert. You will be given a broken SQL query along with:
 - The database schema
@@ -185,10 +185,7 @@ def main():
         print(f"OpenAI Base URL: {OPENAI_BASE_URL}")
     
     # Initialize OpenAI client
-    if OPENAI_BASE_URL:
-        client = OpenAI(api_key=api_key, base_url=OPENAI_BASE_URL)
-    else:
-        client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, base_url=OPENAI_BASE_URL)
     
     # Run all tasks
     scores = {}

@@ -14,8 +14,8 @@ from typing import List, Optional
 from openai import OpenAI
 
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://aipipe.org/openai/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
 BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
 BENCHMARK = "queryfix-sql-debugger"
 SUCCESS_SCORE_THRESHOLD = 0.5
