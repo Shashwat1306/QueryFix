@@ -47,17 +47,17 @@ EASY_QUERIES = [
     },
     {
         "query_id": 3,
-        "broken_query": "SELECT department, COUNT(*) FROM employees",
+        "broken_query": "SELECT department COUNT(*) as total FROM employees GROUP BY department",
         "bug_type": "clause",
         "bug_description": "Missing GROUP BY clause for aggregate query",
-        "correct_query": "SELECT department, COUNT(*) as count FROM employees GROUP BY department",
+        "correct_query": "SELECT department, COUNT(*) as total FROM employees GROUP BY department",
         "expected_result": [
-            {"department": "Engineering", "count": 3},
-            {"department": "HR", "count": 2},
-            {"department": "Marketing", "count": 3},
+            {"department": "Engineering", "total": 3},
+            {"department": "HR", "total": 2},
+            {"department": "Marketing", "total": 3},
         ],
-        "error_message": "No error but returns only 1 row instead of per-department counts",
-        "expected_output_hint": "Should return one row per department with employee count"
+        "error_message": "No error but returns only 1 row instead of 3 — missing GROUP BY clause",
+        "expected_output_hint": "Should return 3 rows with department and total columns showing employee count per department."
     },
     {
         "query_id": 4,

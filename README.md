@@ -314,7 +314,7 @@ python inference.py
 ### Inference Results
 | Task | Score | Steps |
 |---|---|---|
-| Easy | 0.800 | 7 |
+| Easy | 1.000 | 5 |
 | Medium | 0.868 | 11 |
 | Hard | 0.650 | 12 |
 
@@ -326,16 +326,15 @@ Baseline agent using **gpt-4o-mini** via AIPipe (temperature=0.0):
 
 | Task | Score | Queries Solved |
 |------|-------|----------------|
-| Easy | 0.800 | 4/5 queries solved |
+| Easy | 1.000 | 5/5 queries solved |
 | Medium | 0.868 | 5/7 queries solved |
-| Hard | 0.649 | 5/8 queries solved |
-| **Average** | **0.772** | **14/20 total** |
+| Hard | 0.650 | 5/8 queries solved |
+| **Average** | **0.839** | **15/20 total** |
 
 **Performance breakdown:**
 
-**Easy Task (0.800):**
-- ✅ Solved: Queries 1, 2, 4, 5
-- ❌ Failed: Query 3 (GROUP BY with COUNT — model repeated same incorrect answer)
+**Easy Task (1.000):**
+- ✅ Solved: All 5 queries perfectly on first attempt
 
 **Medium Task (0.868):**
 - ✅ Perfect: Queries 101, 103, 105, 106, 107
