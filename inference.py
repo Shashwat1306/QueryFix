@@ -2,10 +2,12 @@
 Inference Script for QueryFix SQL Query Debugger OpenEnv Environment
 =====================================================================
 MANDATORY environment variables:
-    HF_TOKEN       Your Hugging Face / API key (also accepts API_KEY)
-    API_BASE_URL   The API endpoint for the LLM (default: https://aipipe.org/openai/v1)
-    MODEL_NAME     The model identifier (default: gpt-4o-mini)
-    BASE_URL       The environment server URL (default: http://localhost:7860)
+    HF_TOKEN       Your Hugging Face token (no default — must be set)
+
+Optional environment variables:
+    API_BASE_URL   LLM endpoint (default: https://router.huggingface.co/v1)
+    MODEL_NAME     Model identifier (default: Qwen/Qwen2.5-72B-Instruct)
+    BASE_URL       Environment server URL (default: http://localhost:7860)
 """
 
 import os
