@@ -6,7 +6,7 @@ Implements all required endpoints.
 import os
 from typing import Any
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 import httpx
 
 from app.models import (
@@ -356,20 +356,205 @@ Return only the fixed SQL query:
 
 
 # Root endpoint
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    """Root endpoint with environment information."""
-    return {
-        "name": "SQL Query Debugger",
-        "version": "1.0.0",
-        "description": "An OpenEnv environment where AI agents debug broken SQL queries",
-        "endpoints": {
-            "health": "GET /health",
-            "reset": "POST /reset",
-            "step": "POST /step",
-            "state": "GET /state",
-            "tasks": "GET /tasks",
-            "grader": "POST /grader",
-            "baseline": "POST /baseline"
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QueryFix — SQL Query Debugger</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            padding: 40px 20px;
         }
-    }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 50px; }
+        .emoji { font-size: 64px; margin-bottom: 16px; }
+        h1 { font-size: 42px; font-weight: 700; color: #58a6ff; margin-bottom: 8px; }
+        .subtitle { font-size: 18px; color: #8b949e; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+        .badges { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .badge {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            color: #58a6ff;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+        .stat-value { font-size: 36px; font-weight: 700; color: #58a6ff; }
+        .stat-label { font-size: 13px; color: #8b949e; margin-top: 4px; }
+        .section { margin-bottom: 32px; }
+        h2 { font-size: 20px; font-weight: 600; margin-bottom: 16px; color: #e6edf3; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+        .tasks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .task-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .task-title { font-weight: 600; font-size: 16px; margin-bottom: 8px; }
+        .easy { color: #3fb950; }
+        .medium { color: #d29922; }
+        .hard { color: #f85149; }
+        .task-score { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .task-meta { font-size: 12px; color: #8b949e; }
+        .endpoints { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .endpoint {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #e6edf3;
+            transition: border-color 0.2s;
+        }
+        .endpoint:hover { border-color: #58a6ff; }
+        .method {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #1f6feb;
+            color: white;
+        }
+        .method.get { background: #1a7f37; }
+        .endpoint-path { font-size: 14px; font-family: monospace; }
+        .endpoint-desc { font-size: 12px; color: #8b949e; margin-left: auto; }
+        .footer { text-align: center; margin-top: 50px; color: #8b949e; font-size: 14px; }
+        .footer a { color: #58a6ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="emoji">🔍</div>
+            <h1>QueryFix</h1>
+            <p class="subtitle">An OpenEnv environment where AI agents learn to debug broken SQL queries across syntax, semantic, and logical error categories.</p>
+            <div class="badges">
+                <span class="badge">⚡ OpenEnv Compliant</span>
+                <span class="badge">🗄️ SQLite Powered</span>
+                <span class="badge">🤖 20 SQL Queries</span>
+                <span class="badge">📊 6 Bug Categories</span>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">20</div>
+                <div class="stat-label">Hand-crafted Queries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0.839</div>
+                <div class="stat-label">Baseline Score (avg)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Bug Categories</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Baseline Performance</h2>
+            <div class="tasks">
+                <div class="task-card">
+                    <div class="task-title easy">Easy</div>
+                    <div class="task-score easy">1.000</div>
+                    <div class="task-meta">5 queries · 5 steps</div>
+                    <div class="task-meta">Syntax errors & typos</div>
+                </div>
+                <div class="task-card">
+                    <div class="task-title medium">Medium</div>
+                    <div class="task-score medium">0.868</div>
+                    <div class="task-meta">7 queries · 11 steps</div>
+                    <div class="task-meta">JOIN & aggregate bugs</div>
+                </div>
+                <div class="task-card">
+                    <div class="task-title hard">Hard</div>
+                    <div class="task-score hard">0.650</div>
+                    <div class="task-meta">8 queries · 12 steps</div>
+                    <div class="task-meta">Silent logic bugs</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔌 API Endpoints</h2>
+            <div class="endpoints">
+                <a class="endpoint" href="/docs">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/docs</span>
+                    <span class="endpoint-desc">Interactive docs</span>
+                </a>
+                <a class="endpoint" href="/health">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/health</span>
+                    <span class="endpoint-desc">Health check</span>
+                </a>
+                <a class="endpoint" href="/tasks">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/tasks</span>
+                    <span class="endpoint-desc">List all tasks</span>
+                </a>
+                <a class="endpoint" href="/schema">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/schema</span>
+                    <span class="endpoint-desc">Action & observation schema</span>
+                </a>
+                <div class="endpoint">
+                    <span class="method">POST</span>
+                    <span class="endpoint-path">/reset</span>
+                    <span class="endpoint-desc">Start episode</span>
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span>
+                    <span class="endpoint-path">/step</span>
+                    <span class="endpoint-desc">Submit fix</span>
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span>
+                    <span class="endpoint-path">/grader</span>
+                    <span class="endpoint-desc">Get score</span>
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span>
+                    <span class="endpoint-path">/baseline</span>
+                    <span class="endpoint-desc">Run baseline agent</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built for the <strong>Meta PyTorch × Hugging Face OpenEnv Hackathon</strong></p>
+            <p style="margin-top: 8px;">
+                <a href="/docs">API Docs</a> · 
+                <a href="https://huggingface.co/spaces/Shashwat1306/queryfix-env">HF Space</a> ·
+                <a href="/tasks">View Tasks</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+"""
