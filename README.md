@@ -13,7 +13,7 @@ tags:
 
 # SQL Query Debugger — OpenEnv Environment
 
-An OpenEnv-compliant environment where AI agents learn to debug broken SQL queries. The agent receives broken SQL queries with contextual information (schema, error messages, expected output hints) and must submit corrected versions. Each query is executed against an in-memory SQLite database, and results are compared to ground truth to score the agent's performance.
+SQL debugging accounts for a significant portion of developer time, yet no standardized RL environment exists for it. QueryFix fills this gap — a fully deterministic OpenEnv environment where AI agents learn to identify and fix broken SQL queries across syntax, semantic, and logical error categories. Built on SQLite with 20 hand-crafted queries spanning 6 bug types, QueryFix provides immediate value for benchmarking LLM code reasoning capabilities.
 
 **Live Demo:** [QueryFix on Hugging Face](https://huggingface.co/spaces/Shashwat1306/queryfix-env)
 
@@ -36,6 +36,17 @@ SQL Query Debugger simulates a real-world scenario where developers and data ana
 - **Immediate feedback:** Agents learn from execution results and detailed reward signals
 - **Scalable difficulty:** Three progressive difficulty levels for curriculum learning
 
+---
+
+## Why QueryFix?
+
+| Problem | QueryFix Solution |
+|---|---|
+| SQL debugging is time-consuming for developers | Trains agents to debug automatically |
+| No SQL-specific RL benchmark exists | Fills a real gap in OpenEnv ecosystem |
+| LLM code reasoning is hard to evaluate | Deterministic SQLite graders remove ambiguity |
+| Difficulty calibration is often arbitrary | 3 tiers validated against gpt-4o-mini baseline |
+
 **Database Schema:**
 
 The environment uses an in-memory SQLite database with 4 tables:
@@ -47,6 +58,8 @@ The environment uses an in-memory SQLite database with 4 tables:
 ---
 
 ## 2. Observation Space
+
+The observation space gives the agent all information a human developer would have when debugging: the broken query, the database schema, the error message, and a high-level description of the expected output. Crucially, the agent is NOT given the correct answer — it must reason about the bug from context alone.
 
 After calling `/reset` or `/step`, the agent receives an **Observation** object with the following fields:
 
@@ -75,6 +88,8 @@ After calling `/reset` or `/step`, the agent receives an **Observation** object 
 ---
 
 ## 3. Action Space
+
+The action space is intentionally minimal — the agent submits a single fixed SQL query per step. This mirrors how a developer actually debugs: read the error, think about the fix, submit a new query. No intermediate steps, no partial edits.
 
 The agent submits an **Action** object:
 
@@ -194,6 +209,19 @@ GROUP BY d.name
 
 ---
 
+## Bug Categories
+
+| Category | Examples | Difficulty |
+|---|---|---|
+| Syntax | Missing commas, typos, unquoted strings | Easy |
+| Clause | Missing GROUP BY, WHERE vs HAVING | Easy, Medium |
+| JOIN | INNER vs LEFT JOIN, self-join inversion | Medium, Hard |
+| Aggregate | Wrong aggregate function, missing alias | Medium |
+| Subquery | Scalar vs multi-row, scope errors | Medium, Hard |
+| NULL Handling | COALESCE, LEFT JOIN aggregation | Hard |
+
+---
+
 ## 6. Setup Instructions
 
 ### Prerequisites
@@ -248,16 +276,15 @@ curl http://localhost:7860/health
 
 This environment uses the OpenAI API for the `/baseline` endpoint only.
 
-### Standard OpenAI (for judges / evaluators)
+### Standard OpenAI / HF Router (for judges / evaluators)
 Set your API key as an environment variable:
 ```bash
-export OPENAI_API_KEY=sk-...
+export OPENAI_API_KEY=your-hf-token
+export OPENAI_BASE_URL=https://router.huggingface.co/v1
 python baseline.py
 ```
 
-### AIPipe (alternative, used in this deployment)
-This Space uses AIPipe as an OpenAI-compatible proxy.
-If you have an AIPipe token, also set:
+### AIPipe (alternative)
 ```bash
 export OPENAI_API_KEY=your-aipipe-token
 export OPENAI_BASE_URL=https://aipipe.org/openai/v1
@@ -271,14 +298,14 @@ Both setups work identically.
 ### Running the Baseline Agent
 
 ```bash
-export OPENAI_API_KEY=your-aipipe-token-or-openai-key
-# Works with both standard OpenAI keys (sk-...) and AIPipe tokens
-# See "API Keys & Authentication" section above for details
+export HF_TOKEN=your-api-key
+export BASE_URL=http://localhost:8000
 python baseline.py
 ```
 
 Optional environment variables:
-- `OPENAI_MODEL` (default: gpt-4o-mini)
+- `OPENAI_MODEL` (default: Qwen/Qwen2.5-72B-Instruct)
+- `OPENAI_BASE_URL` (default: https://router.huggingface.co/v1)
 - `BASE_URL` (default: http://localhost:8000)
 
 ---
@@ -290,9 +317,9 @@ The `inference.py` script runs the LLM agent against all 3 tasks and emits struc
 ### Required Environment Variables
 | Variable | Description |
 |---|---|
-| `HF_TOKEN` | Your API key (AIPipe token or OpenAI key) |
-| `API_BASE_URL` | LLM endpoint (default: https://aipipe.org/openai/v1) |
-| `MODEL_NAME` | Model identifier (default: gpt-4o-mini) |
+| `HF_TOKEN` | Your HF token or API key |
+| `API_BASE_URL` | LLM endpoint (default: https://router.huggingface.co/v1) |
+| `MODEL_NAME` | Model identifier (default: Qwen/Qwen2.5-72B-Instruct) |
 | `BASE_URL` | Environment server URL (default: http://localhost:7860) |
 
 ### Run Locally
@@ -308,7 +335,7 @@ python inference.py
 ```
 [START] task=easy env=queryfix-sql-debugger model=gpt-4o-mini
 [STEP] step=1 action=SELECT name, salary FROM employees reward=1.00 done=false error=null
-[END] success=true steps=7 score=0.800 rewards=1.00,1.00,0.10,0.05,0.00,1.00,1.00
+[END] success=true steps=5 score=1.000 rewards=1.00,1.00,1.00,1.00,1.00
 ```
 
 ### Inference Results
@@ -340,7 +367,7 @@ Baseline agent using **gpt-4o-mini** via AIPipe (temperature=0.0):
 - ✅ Perfect: Queries 101, 103, 105, 106, 107
 - ⚠️ Partial: Queries 102, 104 (HAVING threshold, subquery logic)
 
-**Hard Task (0.649):**
+**Hard Task (0.650):**
 - ✅ Perfect: Queries 202, 203, 206, 207, 208
 - ⚠️ Partial/Failed: Queries 201, 204, 205
   - Query 201: NULL aggregation in LEFT JOIN (COALESCE pattern)
@@ -470,9 +497,9 @@ Run baseline agent on all tasks (requires `OPENAI_API_KEY`).
 **Response:**
 ```json
 {
-  "easy": 0.800,
+  "easy": 1.000,
   "medium": 0.868,
-  "hard": 0.649,
+  "hard": 0.650,
   "model_used": "gpt-4o-mini"
 }
 ```
@@ -540,6 +567,15 @@ uvicorn app.main:app --reload
 # In another terminal, test endpoints
 curl -X POST http://localhost:8000/reset -H "Content-Type: application/json" -d '{"task_id":"easy"}'
 ```
+
+---
+
+## Known Limitations
+
+- Fixed dataset of 20 queries — future work could add dynamic query generation
+- Single SQLite schema — real-world environments have diverse schemas  
+- No multi-turn context — agent sees each query independently without conversation history
+- LLM baseline shows minor variance across runs due to non-deterministic sampling
 
 ---
 
