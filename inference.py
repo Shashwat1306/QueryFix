@@ -20,7 +20,24 @@ load_dotenv()
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
 API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
-BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
+
+def get_base_url():
+    local_url = os.getenv("BASE_URL", "http://localhost:7860")
+    hf_url = "https://shashwat1306-queryfix-env.hf.space"
+    
+    # Try local first
+    try:
+        response = requests.get(f"{local_url}/health", timeout=3)
+        if response.status_code == 200:
+            return local_url
+    except Exception:
+        pass
+    
+    # Fall back to HF Space
+    print(f"[DEBUG] Local server not found, using HF Space: {hf_url}", flush=True)
+    return hf_url
+
+BASE_URL = get_base_url()
 BENCHMARK = "queryfix-sql-debugger"
 SUCCESS_SCORE_THRESHOLD = 0.5
 
