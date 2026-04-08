@@ -4,7 +4,7 @@ Implements all required endpoints.
 """
 
 import os
-from typing import Any
+from typing import Any, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 import httpx
@@ -101,16 +101,19 @@ async def mcp():
 
 
 @app.post("/reset", response_model=Observation)
-async def reset(request: ResetRequest):
+async def reset(request: Optional[ResetRequest] = None):
     """
     Reset the environment for a new episode.
     
     Args:
-        request: ResetRequest with task_id
+        request: ResetRequest with task_id (optional, defaults to "easy")
         
     Returns:
         Initial Observation
     """
+    if request is None:
+        request = ResetRequest()  # Uses default task_id="easy"
+    
     try:
         observation = app.state.env.reset(request.task_id)
         return observation
