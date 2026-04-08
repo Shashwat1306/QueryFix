@@ -7,6 +7,11 @@ from typing import Any
 from app.models import GraderResponse
 
 
+def clamp_score(score: float) -> float:
+    """Clamp score to strictly between 0 and 1 (not including 0.0 or 1.0)."""
+    return max(0.01, min(0.99, score))
+
+
 def grade_episode(
     task_id: str,
     query_scores: list[float]   # one score per query, in order
@@ -97,8 +102,8 @@ def grade_episode(
             "warning": f"Unknown task_id: {task_id}",
         }
     
-    # Clamp final score to [0.0, 1.0]
-    final_score = max(0.0, min(1.0, final_score))
+    # Clamp final score to strictly between 0 and 1 (0.01 to 0.99)
+    final_score = clamp_score(final_score)
     
     return GraderResponse(
         task_id=task_id,

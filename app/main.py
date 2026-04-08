@@ -15,6 +15,7 @@ from app.models import (
 )
 from app.environment import SQLDebuggerEnvironment
 from app.tasks import task_easy, task_medium, task_hard
+from app.graders import clamp_score
 
 
 # Initialize FastAPI app
@@ -275,7 +276,7 @@ Just the raw SQL string."""
                 # Reset environment
                 reset_response = await http_client.post(f"{BASE_URL}/reset", json={"task_id": task_id})
                 if reset_response.status_code != 200:
-                    scores[task_id] = 0.0
+                    scores[task_id] = 0.01  # Use minimum clamped value
                     continue
                     
                 obs = reset_response.json()
@@ -327,7 +328,7 @@ Return only the fixed SQL query:
                         
                     except Exception as e:
                         # If OpenAI call fails, break
-                        scores[task_id] = 0.0
+                        scores[task_id] = 0.01  # Use minimum clamped value
                         done = True
                         break
                 
@@ -335,14 +336,14 @@ Return only the fixed SQL query:
                 if done:
                     grader_response = await http_client.post(f"{BASE_URL}/grader")
                     if grader_response.status_code == 200:
-                        scores[task_id] = grader_response.json()["score"]
+                        scores[task_id] = clamp_score(grader_response.json()["score"])
                     else:
-                        scores[task_id] = 0.0
+                        scores[task_id] = 0.01  # Use minimum clamped value instead of 0.0
         
         return BaselineResponse(
-            easy=scores.get("easy", 0.0),
-            medium=scores.get("medium", 0.0),
-            hard=scores.get("hard", 0.0),
+            easy=clamp_score(scores.get("easy", 0.01)),
+            medium=clamp_score(scores.get("medium", 0.01)),
+            hard=clamp_score(scores.get("hard", 0.01)),
             model_used=MODEL
         )
         
