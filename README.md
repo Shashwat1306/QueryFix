@@ -335,13 +335,13 @@ python inference.py
 ```
 [START] task=easy env=queryfix-sql-debugger model=gpt-4o-mini
 [STEP] step=1 action=SELECT name, salary FROM employees reward=1.00 done=false error=null
-[END] success=true steps=5 score=1.000 rewards=1.00,1.00,1.00,1.00,1.00
+[END] success=true steps=5 score=0.990 rewards=1.00,1.00,1.00,1.00,1.00
 ```
 
 ### Inference Results
 | Task | Score | Steps |
 |---|---|---|
-| Easy | 1.000 | 5 |
+| Easy | 0.990 | 5 |
 | Medium | 0.868 | 11 |
 | Hard | 0.650 | 12 |
 
@@ -353,14 +353,14 @@ Baseline agent using **gpt-4o-mini** via AIPipe (temperature=0.0):
 
 | Task | Score | Queries Solved |
 |------|-------|----------------|
-| Easy | 1.000 | 5/5 queries solved |
+| Easy | 0.990 | 5/5 queries solved |
 | Medium | 0.868 | 5/7 queries solved |
 | Hard | 0.650 | 5/8 queries solved |
-| **Average** | **0.839** | **15/20 total** |
+| **Average** | **0.836** | **15/20 total** |
 
 **Performance breakdown:**
 
-**Easy Task (1.000):**
+**Easy Task (0.990):**
 - ✅ Solved: All 5 queries perfectly on first attempt
 
 **Medium Task (0.868):**
@@ -497,7 +497,7 @@ Run baseline agent on all tasks (requires `OPENAI_API_KEY`).
 **Response:**
 ```json
 {
-  "easy": 1.000,
+  "easy": 0.990,
   "medium": 0.868,
   "hard": 0.650,
   "model_used": "gpt-4o-mini"

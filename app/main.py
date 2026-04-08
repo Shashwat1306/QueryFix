@@ -471,7 +471,7 @@ async def root():
                 <div class="stat-label">Hand-crafted Queries</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">0.839</div>
+                <div class="stat-value">0.836</div>
                 <div class="stat-label">Baseline Score (avg)</div>
             </div>
             <div class="stat-card">
@@ -485,7 +485,7 @@ async def root():
             <div class="tasks">
                 <div class="task-card">
                     <div class="task-title easy">Easy</div>
-                    <div class="task-score easy">1.000</div>
+                    <div class="task-score easy">0.990</div>
                     <div class="task-meta">5 queries · 5 steps</div>
                     <div class="task-meta">Syntax errors & typos</div>
                 </div>
